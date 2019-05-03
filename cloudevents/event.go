@@ -17,7 +17,9 @@ limitations under the License.
 package cloudevents
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -163,6 +165,18 @@ func unmarshalEventData(encoding string, reader io.Reader, data interface{}) err
 	return fmt.Errorf("Cannot decode content type %q", encoding)
 }
 
+func marshalData(data interface{}) ([]byte, error) {
+	var buffer bytes.Buffer
+	enc := gob.NewEncoder(&buffer)
+
+	err := enc.Encode(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer.Bytes(), nil
+}
+
 func marshalEventData(encoding string, data interface{}) ([]byte, error) {
 	var b []byte
 	var err error
@@ -172,7 +186,7 @@ func marshalEventData(encoding string, data interface{}) ([]byte, error) {
 	} else if isXMLEncoding(encoding) {
 		b, err = xml.Marshal(data)
 	} else {
-		err = fmt.Errorf("Cannot encode content type %q", encoding)
+		b, err = marshalData(data)
 	}
 
 	if err != nil {
